@@ -14,8 +14,10 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@dnd-kit/react": "^0.4.0",
     "@electron-toolkit/preload": "latest",
     "@electron-toolkit/utils": "latest",
+    "@mastra/core": "^1.41.0",
     "@tiptap/core": "latest",
     "@tiptap/extension-placeholder": "latest",
     "@tiptap/extension-underline": "latest",
@@ -24,7 +26,8 @@
     "@tiptap/starter-kit": "latest",
     "electron": "latest",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "latest",
