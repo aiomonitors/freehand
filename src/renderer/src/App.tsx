@@ -1,10 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Editor } from '@tiptap/core'
 
+import type { ExtractedTodo } from '../../shared/todos'
 import { DraftTimer } from './DraftTimer'
 import { ForwardOnlyEditor } from './editor/ForwardOnlyEditor'
 import { ScrapConfirmModal } from './editor/ScrapConfirmModal'
 import { Toolbar } from './editor/Toolbar'
+import { TodoSidebar } from './todos/TodoSidebar'
+import { reorderIds } from './todos/todoReorder'
+import type { ExtractionStatus, TodoItem } from './todos/todoTypes'
 
 const FONTS = [
   { label: 'Inter', cssFamily: 'Inter, system-ui, sans-serif' },
@@ -16,13 +20,47 @@ function isCommandOrControl(event: KeyboardEvent): boolean {
   return event.metaKey || event.ctrlKey
 }
 
+function createClientRequestId(): string {
+  return globalThis.crypto?.randomUUID() ?? `${Date.now()}-${Math.random()}`
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message
+  }
+
+  return 'Todo extraction failed.'
+}
+
+function buildTodoMap(todos: ExtractedTodo[]): Record<string, TodoItem> {
+  return todos.reduce<Record<string, TodoItem>>((todoMap, todo) => {
+    todoMap[todo.id] = {
+      ...todo,
+      completed: false,
+    }
+
+    return todoMap
+  }, {})
+}
+
 export default function App(): React.JSX.Element {
   const [fontIndex, setFontIndex] = useState(0)
   const [isScrapConfirmOpen, setIsScrapConfirmOpen] = useState(false)
   const [editor, setEditor] = useState<Editor | null>(null)
   const [hasContent, setHasContent] = useState(false)
   const [timerStartedAt, setTimerStartedAt] = useState<number | null>(null)
+  const [isFinalized, setIsFinalized] = useState(false)
+  const [finalizedDraftText, setFinalizedDraftText] = useState<string | null>(
+    null,
+  )
+  const [extractionStatus, setExtractionStatus] =
+    useState<ExtractionStatus>('idle')
+  const [extractionError, setExtractionError] = useState<string | null>(null)
+  const [todosById, setTodosById] = useState<Record<string, TodoItem>>({})
+  const [activeTodoIds, setActiveTodoIds] = useState<string[]>([])
+  const [completedTodoIds, setCompletedTodoIds] = useState<string[]>([])
   const [, setEditorRenderTick] = useState(0)
+  const activeExtractionIdRef = useRef<string | null>(null)
 
   const selectedFont = FONTS[fontIndex]
 
@@ -31,10 +69,47 @@ export default function App(): React.JSX.Element {
     editor?.commands.focus('end')
   }, [editor])
 
+  const startTodoExtraction = useCallback((draftText: string) => {
+    const extractionId = createClientRequestId()
+    activeExtractionIdRef.current = extractionId
+    setExtractionStatus('loading')
+    setExtractionError(null)
+
+    void window.freehand
+      .extractTodos({ draftText })
+      .then((response) => {
+        if (activeExtractionIdRef.current !== extractionId) {
+          return
+        }
+
+        setTodosById(buildTodoMap(response.todos))
+        setActiveTodoIds(response.todos.map((todo) => todo.id))
+        setCompletedTodoIds([])
+        setExtractionStatus('ready')
+      })
+      .catch((error: unknown) => {
+        if (activeExtractionIdRef.current !== extractionId) {
+          return
+        }
+
+        setExtractionError(getErrorMessage(error))
+        setExtractionStatus('error')
+      })
+  }, [])
+
   const scrapDraft = useCallback(() => {
+    activeExtractionIdRef.current = null
+    editor?.setEditable(true)
     editor?.commands.clearContent()
     setHasContent(false)
     setTimerStartedAt(null)
+    setIsFinalized(false)
+    setFinalizedDraftText(null)
+    setExtractionStatus('idle')
+    setExtractionError(null)
+    setTodosById({})
+    setActiveTodoIds([])
+    setCompletedTodoIds([])
     setIsScrapConfirmOpen(false)
 
     window.requestAnimationFrame(() => {
@@ -68,6 +143,127 @@ export default function App(): React.JSX.Element {
     }
   }, [])
 
+  const finalizeDraft = useCallback(() => {
+    if (!editor || !hasContent || isFinalized || isScrapConfirmOpen) {
+      return
+    }
+
+    const draftText = editor.getText().trim()
+
+    if (!draftText) {
+      return
+    }
+
+    setIsFinalized(true)
+    setFinalizedDraftText(draftText)
+    setTodosById({})
+    setActiveTodoIds([])
+    setCompletedTodoIds([])
+    startTodoExtraction(draftText)
+  }, [editor, hasContent, isFinalized, isScrapConfirmOpen, startTodoExtraction])
+
+  const retryTodoExtraction = useCallback(() => {
+    if (!finalizedDraftText) {
+      return
+    }
+
+    startTodoExtraction(finalizedDraftText)
+  }, [finalizedDraftText, startTodoExtraction])
+
+  const rejectTodo = useCallback((id: string) => {
+    setActiveTodoIds((currentIds) =>
+      currentIds.filter((currentId) => currentId !== id),
+    )
+    setCompletedTodoIds((currentIds) =>
+      currentIds.filter((currentId) => currentId !== id),
+    )
+    setTodosById((currentTodos) => {
+      const nextTodos = { ...currentTodos }
+      delete nextTodos[id]
+      return nextTodos
+    })
+  }, [])
+
+  const toggleTodoDone = useCallback(
+    (id: string) => {
+      const activeIndex = activeTodoIds.indexOf(id)
+
+      if (activeIndex !== -1) {
+        setActiveTodoIds((currentIds) =>
+          currentIds.filter((currentId) => currentId !== id),
+        )
+        setCompletedTodoIds((currentIds) =>
+          currentIds.includes(id) ? currentIds : [...currentIds, id],
+        )
+        setTodosById((currentTodos) => {
+          const todo = currentTodos[id]
+
+          if (!todo) {
+            return currentTodos
+          }
+
+          return {
+            ...currentTodos,
+            [id]: {
+              ...todo,
+              completed: true,
+              lastActiveIndex: activeIndex,
+            },
+          }
+        })
+        return
+      }
+
+      if (!completedTodoIds.includes(id)) {
+        return
+      }
+
+      const previousActiveIndex = todosById[id]?.lastActiveIndex
+      const targetIndex =
+        previousActiveIndex === undefined
+          ? activeTodoIds.length
+          : Math.min(Math.max(previousActiveIndex, 0), activeTodoIds.length)
+
+      setCompletedTodoIds((currentIds) =>
+        currentIds.filter((currentId) => currentId !== id),
+      )
+      setActiveTodoIds((currentIds) => {
+        if (currentIds.includes(id)) {
+          return currentIds
+        }
+
+        const nextIds = [...currentIds]
+        nextIds.splice(targetIndex, 0, id)
+        return nextIds
+      })
+      setTodosById((currentTodos) => {
+        const todo = currentTodos[id]
+
+        if (!todo) {
+          return currentTodos
+        }
+
+        return {
+          ...currentTodos,
+          [id]: {
+            ...todo,
+            completed: false,
+          },
+        }
+      })
+    },
+    [activeTodoIds, completedTodoIds, todosById],
+  )
+
+  const reorderActiveTodos = useCallback(
+    (sourceIndex: number, targetIndex: number) => {
+      setActiveTodoIds((currentIds) =>
+        reorderIds(currentIds, sourceIndex, targetIndex),
+      )
+    },
+    [],
+  )
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {
       if (!isCommandOrControl(event)) {
@@ -92,6 +288,15 @@ export default function App(): React.JSX.Element {
         return
       }
 
+      if (key === 'enter' && event.shiftKey && !isScrapConfirmOpen) {
+        if (hasContent && !isFinalized) {
+          event.preventDefault()
+          finalizeDraft()
+        }
+
+        return
+      }
+
       if (key === 'enter' && isScrapConfirmOpen) {
         event.preventDefault()
         scrapDraft()
@@ -100,33 +305,73 @@ export default function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [cycleFont, isScrapConfirmOpen, requestScrap, scrapDraft])
+  }, [
+    cycleFont,
+    finalizeDraft,
+    hasContent,
+    isFinalized,
+    isScrapConfirmOpen,
+    requestScrap,
+    scrapDraft,
+  ])
 
   const editorStyle = useMemo(
     () => ({ fontFamily: selectedFont.cssFamily }),
     [selectedFont.cssFamily],
   )
 
+  const activeTodos = useMemo(
+    () => activeTodoIds.flatMap((id) => (todosById[id] ? [todosById[id]] : [])),
+    [activeTodoIds, todosById],
+  )
+
+  const completedTodos = useMemo(
+    () =>
+      completedTodoIds.flatMap((id) => (todosById[id] ? [todosById[id]] : [])),
+    [completedTodoIds, todosById],
+  )
+
+  const canFinalize = Boolean(editor && hasContent && !isFinalized)
+
   return (
-    <main className="app-shell">
-      {timerStartedAt !== null ? (
+    <main className="app-shell" data-finalized={isFinalized || undefined}>
+      {timerStartedAt !== null && !isFinalized ? (
         <DraftTimer startedAt={timerStartedAt} />
       ) : null}
 
       <ForwardOnlyEditor
         fontFamily={selectedFont.cssFamily}
+        isFinalized={isFinalized}
         onContentStateChange={handleContentStateChange}
         onEditorReady={setEditor}
         onEditorStateChange={refreshEditorControls}
       />
 
-      <Toolbar
-        editor={editor}
-        fontLabel={selectedFont.label}
-        onCycleFont={cycleFont}
-        onScrap={requestScrap}
-        style={editorStyle}
-      />
+      {isFinalized ? (
+        <TodoSidebar
+          status={extractionStatus}
+          error={extractionError}
+          activeTodos={activeTodos}
+          completedTodos={completedTodos}
+          onRetry={retryTodoExtraction}
+          onReject={rejectTodo}
+          onToggleDone={toggleTodoDone}
+          onReorderActive={reorderActiveTodos}
+        />
+      ) : null}
+
+      {!isFinalized ? (
+        <Toolbar
+          editor={editor}
+          fontLabel={selectedFont.label}
+          canFinalize={canFinalize}
+          isFinalized={isFinalized}
+          onCycleFont={cycleFont}
+          onFinalize={finalizeDraft}
+          onScrap={requestScrap}
+          style={editorStyle}
+        />
+      ) : null}
 
       <ScrapConfirmModal
         isOpen={isScrapConfirmOpen}

@@ -10,6 +10,7 @@ import { NoDeletionExtension } from './extensions/NoDeletionExtension'
 
 type ForwardOnlyEditorProps = {
   fontFamily: string
+  isFinalized: boolean
   onContentStateChange: (hasContent: boolean) => void
   onEditorReady: (editor: Editor | null) => void
   onEditorStateChange: () => void
@@ -17,6 +18,7 @@ type ForwardOnlyEditorProps = {
 
 export function ForwardOnlyEditor({
   fontFamily,
+  isFinalized,
   onContentStateChange,
   onEditorReady,
   onEditorStateChange,
@@ -36,6 +38,7 @@ export function ForwardOnlyEditor({
       NoDeletionExtension,
     ],
     content: '',
+    editable: !isFinalized,
     autofocus: 'end',
     enableInputRules: false,
     enablePasteRules: false,
@@ -77,8 +80,16 @@ export function ForwardOnlyEditor({
     return () => onEditorReady(null)
   }, [editor, onEditorReady])
 
+  useEffect(() => {
+    editor?.setEditable(!isFinalized)
+  }, [editor, isFinalized])
+
   return (
-    <section className="editor-shell" style={{ fontFamily }}>
+    <section
+      className="editor-shell"
+      data-finalized={isFinalized || undefined}
+      style={{ fontFamily }}
+    >
       <div className="editor-content">
         <EditorContent editor={editor} />
       </div>

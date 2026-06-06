@@ -4,7 +4,10 @@ import type { Editor } from '@tiptap/core'
 type ToolbarProps = {
   editor: Editor | null
   fontLabel: string
+  canFinalize: boolean
+  isFinalized: boolean
   onCycleFont: () => void
+  onFinalize: () => void
   onScrap: () => void
   style?: CSSProperties
 }
@@ -48,11 +51,14 @@ function ToolbarButton({
 export function Toolbar({
   editor,
   fontLabel,
+  canFinalize,
+  isFinalized,
   onCycleFont,
+  onFinalize,
   onScrap,
   style,
 }: ToolbarProps): React.JSX.Element {
-  const disabled = !editor
+  const disabled = !editor || isFinalized
 
   return (
     <div className="toolbar-wrap" aria-label="Editor toolbar" style={style}>
@@ -66,6 +72,14 @@ export function Toolbar({
           ariaLabel="Scrap draft"
           onClick={onScrap}
           destructive
+        />
+        <ToolbarButton
+          label={isFinalized ? 'Finalized' : 'Finalize'}
+          ariaLabel="Finalize draft and extract TODOs"
+          active={isFinalized}
+          disabled={!canFinalize}
+          onClick={onFinalize}
+          title="Finalize draft (Cmd/Ctrl+Shift+Enter)"
         />
         <span className="toolbar-divider" aria-hidden="true" />
         <ToolbarButton
