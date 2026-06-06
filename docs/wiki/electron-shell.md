@@ -19,9 +19,21 @@ Renderer security is intentionally restrictive:
 
 - `contextIsolation: true`
 - `nodeIntegration: false`
-- preload is present but exposes no app APIs for current behavior
+- preload exposes only a minimal `window.freehand.extractTodos(...)` API for finalized TODO extraction
 
-The renderer should not access Node APIs directly.
+The renderer should not access Node APIs directly. OpenRouter credentials remain in the main-process/backend boundary.
+
+## Backend IPC
+
+The finalized TODO sidebar uses one IPC channel, `todo:extract`, to ask the main process to extract TODO items from a finalized text snapshot. The main process validates the request, runs the Mastra/OpenRouter extraction service, and returns serializable TODO data.
+
+Required environment variable:
+
+- `OPENROUTER_API_KEY`
+
+Optional environment variable:
+
+- `OPENROUTER_MODEL`
 
 ## Persistence and file access
 
@@ -44,4 +56,6 @@ Current app-specific shortcuts live in the renderer rather than custom Electron 
 
 - `src/main/index.ts`
 - `src/preload/index.ts`
+- `src/main/registerTodoIpc.ts`
+- `src/main/todoExtraction.ts`
 - `electron.vite.config.ts`

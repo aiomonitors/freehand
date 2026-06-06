@@ -9,6 +9,7 @@ The toolbar is a compact fixed pill at the bottom center of the window. It provi
 The toolbar contains:
 
 - `Scrap`
+- `Finalize`
 - current font name
 - bold
 - italic
@@ -22,7 +23,9 @@ The toolbar contains:
 ## Behavior
 
 - Toolbar buttons use accessible `button` elements.
+- Finalize is disabled until the editor has non-whitespace content.
 - Formatting buttons are disabled until the editor instance is ready.
+- The toolbar is hidden after the draft is finalized.
 - Active formatting states are visually distinguishable.
 - Hover states are visible for every toolbar item.
 - Formatting actions should refocus or preserve focus in the editor.
@@ -41,6 +44,7 @@ The toolbar should remain small. It should not become a ribbon, sidebar, or full
 ## Related features
 
 - `scrap-flow.md`
+- `finalized-todo-sidebar.md`
 - `fonts-and-typography.md`
 - `rich-text-formatting.md`
 

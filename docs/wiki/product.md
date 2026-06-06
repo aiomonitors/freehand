@@ -43,7 +43,7 @@ The app supports basic writing formatting: bold, italic, underline, strikethroug
 
 See `toolbar.md`.
 
-A compact pill toolbar sits fixed at the bottom center. It contains Scrap, font cycling, and rich-text controls.
+A compact pill toolbar sits fixed at the bottom center. It contains Scrap, Finalize, font cycling, and rich-text controls.
 
 ### Scrap flow
 
@@ -61,7 +61,13 @@ The app provides three global document font choices: Inter, Space Grotesk, and G
 
 See `elapsed-draft-timer.md`.
 
-Once the user begins meaningful writing, a subtle top-center timer appears and counts elapsed draft time. It resets when the draft is scrapped.
+Once the user begins meaningful writing, a subtle top-center timer appears and counts elapsed draft time. It hides when the draft is finalized and resets when the draft is scrapped.
+
+### Finalized TODO sidebar
+
+See `finalized-todo-sidebar.md`.
+
+A non-empty draft can be finalized with the toolbar or Cmd/Ctrl+Shift+Enter. Finalizing locks the editor, hides the toolbar and timer, opens a right sidebar, and extracts simple checkbox TODO line items through a main-process Mastra/OpenRouter agent. TODO state remains in memory only.
 
 ### Electron shell
 
@@ -79,6 +85,7 @@ The app runs as a secure Electron desktop app with an isolated renderer, minimal
 - Cloud sync.
 - Markdown/source editing mode.
 - Writing analytics or history.
+- Persisted task management.
 - Unit tests for the initial version.
 
 ## State model
@@ -90,6 +97,8 @@ Freehand keeps document and presentation state in the renderer:
 - scrap modal state
 - non-whitespace content detection
 - elapsed timer start timestamp
+- finalized draft state
+- extracted TODO sidebar state
 
 No app-level persistence is expected. Quitting the app loses the draft.
 
@@ -99,6 +108,7 @@ No app-level persistence is expected. Quitting the app loses the draft.
 - Cmd/Ctrl+I: italic
 - Cmd/Ctrl+U: underline
 - Cmd/Ctrl+Shift+F: cycle font
+- Cmd/Ctrl+Shift+Enter: finalize draft
 - Cmd/Ctrl+N: request Scrap
 - Cmd/Ctrl+Enter: confirm Scrap only when the modal is open
 

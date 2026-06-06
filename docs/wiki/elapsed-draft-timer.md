@@ -39,6 +39,8 @@ At or after one hour:
 
 ## Reset behavior
 
+The timer hides when the draft is finalized.
+
 The timer resets and disappears when the draft is scrapped.
 
 If the user cancels the Scrap modal, the timer continues from the original start time.

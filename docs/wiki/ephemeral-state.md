@@ -14,6 +14,10 @@ The renderer owns:
 - non-whitespace content state
 - Scrap modal state
 - elapsed draft timer start timestamp
+- finalized draft state
+- finalized text snapshot
+- extracted TODO items
+- active/completed TODO ordering
 
 ## What is not persisted
 
@@ -22,6 +26,9 @@ The app does not persist:
 - draft content
 - font choice
 - timer state
+- finalized draft state
+- extracted TODO items
+- rejected/completed TODO state
 - formatting history
 - undo/redo history
 - window-specific document data
@@ -32,7 +39,7 @@ Quitting the app loses the current draft.
 
 The no-persistence model keeps the app focused on drafting and avoids turning Freehand into a document manager.
 
-It also keeps the Scrap action conceptually clear: Scrap clears the only current draft state.
+It also keeps the Scrap action conceptually clear: Scrap clears the only current draft state, including any finalized TODO sidebar state.
 
 ## Constraints for future work
 
@@ -50,4 +57,5 @@ Persistence would need to answer:
 
 - `scrap-flow.md`
 - `elapsed-draft-timer.md`
+- `finalized-todo-sidebar.md`
 - `electron-shell.md`
