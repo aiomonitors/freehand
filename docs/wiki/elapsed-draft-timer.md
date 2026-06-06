@@ -2,9 +2,9 @@
 
 ## Summary
 
-The elapsed draft timer appears once the user starts meaningful writing and counts upward from that moment.
+Elapsed draft time is shown inside the top-center mode/timer pill once the user starts meaningful writing.
 
-It is a passive status element, not a writing goal or productivity tracker.
+It is a passive status value, not a writing goal or productivity tracker. The same top pill is interactive for writing mode selection and mode status.
 
 ## Start trigger
 
@@ -12,16 +12,21 @@ The timer starts when the editor first contains non-whitespace text.
 
 This means:
 
+- selecting a writing mode does not start it
 - typing only spaces does not start it
 - formatting-only changes do not start it
 - pasted non-whitespace text starts it
 
 ## Display
 
-- The timer is fixed at the top center of the window.
-- It is subtle and non-interactive.
-- It uses muted styling consistent with the rest of the app.
-- It stays visible while writing and while the Scrap modal is open.
+Before a writing mode is selected, the top pill shows only:
+
+- `Freewrite`
+- `Edit`
+
+After a mode is selected, the pill shows the active mode. Once the timer has started, it also shows elapsed draft time. The pill width transitions smoothly as its contents change.
+
+After either mode is selected, unavailable mode choices are hidden.
 
 ## Format
 
@@ -39,11 +44,11 @@ At or after one hour:
 
 ## Reset behavior
 
-The timer hides when the draft is finalized.
+The top mode/timer pill hides when the draft is finalized.
 
-The timer resets and disappears when the draft is scrapped.
+The timer resets and disappears when the draft is scrapped. Scrap also resets writing mode selection, so the pill returns to showing `Freewrite` and `Edit` choices.
 
-If the user cancels the Scrap modal, the timer continues from the original start time.
+If the user cancels the Scrap modal, the timer and current writing mode continue unchanged.
 
 ## Non-goals
 
@@ -53,9 +58,15 @@ If the user cancels the Scrap modal, the timer continues from the original start
 - No persistence.
 - No analytics or session history.
 - No timer controls in the toolbar.
+- No keyboard shortcuts for selecting modes.
 
 ## Related code
 
-- `src/renderer/src/DraftTimer.tsx`
+- `src/renderer/src/ModeTimerPill.tsx`
 - `src/renderer/src/App.tsx`
 - `src/renderer/src/styles.css`
+
+## Related features
+
+- `writing-modes.md`
+- `scrap-flow.md`

@@ -23,7 +23,7 @@ Supported rich-text shortcuts include:
 - Cmd/Ctrl+I: italic
 - Cmd/Ctrl+U: underline
 
-Other editor-provided shortcuts may work only if they do not violate forward-only behavior.
+Other editor-provided shortcuts may work normally in `Edit` mode, but must not violate `Freewrite` behavior.
 
 ## Heading behavior
 
@@ -31,19 +31,18 @@ The toolbar heading control toggles heading formatting for the active block. The
 
 ## Selection behavior
 
-Formatting selected text is allowed. This is an explicit exception to the no-editing feel because it does not delete or replace content.
+Formatting selected text is allowed in both writing modes. In `Freewrite`, this is an explicit exception to the no-editing feel because it does not delete or replace content.
 
 ## Constraints
 
 Formatting must not:
 
-- enable deleting content
-- enable selected-text replacement
-- reintroduce undo/redo history
+- bypass `Freewrite` deletion rules
+- bypass `Freewrite` selected-text replacement rules
 - require persistence
 - add complex document structures like tables
 
 ## Related code
 
 - `src/renderer/src/editor/Toolbar.tsx`
-- `src/renderer/src/editor/ForwardOnlyEditor.tsx`
+- `src/renderer/src/editor/WritingEditor.tsx`

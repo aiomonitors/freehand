@@ -10,11 +10,11 @@ The finalized TODO sidebar turns a completed draft into a small in-memory action
 - Cmd/Ctrl+Shift+Enter also finalizes a non-empty draft.
 - Finalizing locks the draft editor read-only.
 - The right sidebar opens immediately and shows a loading state while extraction runs.
-- The bottom toolbar and elapsed draft timer are hidden after finalization.
+- The bottom toolbar and top mode/timer pill are hidden after finalization.
 - The sidebar stays open until the draft is scrapped.
 - If extraction fails, the sidebar shows an error and Retry button.
 - Retry uses the same finalized text snapshot.
-- Scrap clears the draft, closes the sidebar, resets TODO state, and unlocks a fresh editor.
+- Scrap clears the draft, closes the sidebar, resets TODO state and writing mode selection, and unlocks a fresh editor.
 
 ## TODO item behavior
 
@@ -73,7 +73,7 @@ No finalized draft or TODO state is persisted.
 - `src/renderer/src/App.tsx`
 - `src/renderer/src/todos/TodoSidebar.tsx`
 - `src/renderer/src/todos/SortableTodoItem.tsx`
-- `src/renderer/src/editor/ForwardOnlyEditor.tsx`
+- `src/renderer/src/editor/WritingEditor.tsx`
 - `src/renderer/src/editor/Toolbar.tsx`
 
 ## Related features

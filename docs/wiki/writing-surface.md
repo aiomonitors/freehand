@@ -6,7 +6,7 @@ Freehand opens to a single full-page rich-text editor. The editor should feel li
 
 ## User experience
 
-- The app starts with one empty editor.
+- The app starts with one empty editor and no selected writing mode.
 - Empty editor copy uses the placeholder `Start writing…`.
 - The page uses a light off-white background.
 - Text uses a slightly off-black color.
@@ -31,11 +31,12 @@ It should look like a focused writing surface.
 
 - The editor auto-focuses on app load.
 - The placeholder appears only while the document is empty.
-- Typing creates rich-text document content in renderer memory.
+- Typing creates rich-text document content in renderer memory and auto-selects `Freewrite` if no mode was chosen.
 - The writing surface should remain usable at the minimum window size.
 
 ## Related features
 
+- `writing-modes.md`
 - `forward-only-editing.md`
 - `rich-text-formatting.md`
 - `toolbar.md`

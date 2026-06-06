@@ -2,9 +2,9 @@
 
 ## Summary
 
-Scrap is the destructive action that clears the current draft and returns the editor to an empty state.
+Scrap is the destructive action that clears the current draft and returns the editor to a fresh empty state.
 
-Because Freehand has no persistence or undo, scrapping meaningful content requires explicit confirmation.
+Because Freehand has no persistence, scrapping meaningful content requires explicit confirmation.
 
 ## User behavior
 
@@ -36,12 +36,18 @@ When Scrap is confirmed:
 - editor content is cleared
 - content/dirty state becomes false
 - Scrap modal closes
+- selected writing mode resets to no selected mode
+- the top pill returns to `Freewrite` / `Edit` choices
 - elapsed draft timer resets
+- finalized/TODO sidebar state resets
 - editor is refocused
 - selected font remains unchanged
 
+Canceling Scrap preserves the current content, timer, and writing mode.
+
 ## Related features
 
+- `writing-modes.md`
 - `elapsed-draft-timer.md`
 - `toolbar.md`
 - `fonts-and-typography.md`
