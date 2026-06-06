@@ -2,18 +2,26 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Editor } from '@tiptap/core'
 
 import type { ExtractedTodo } from '../../shared/todos'
-import { DraftTimer } from './DraftTimer'
-import { ForwardOnlyEditor } from './editor/ForwardOnlyEditor'
+import { ModeTimerPill } from './ModeTimerPill'
+import { WritingEditor } from './editor/WritingEditor'
 import { ScrapConfirmModal } from './editor/ScrapConfirmModal'
 import { Toolbar } from './editor/Toolbar'
 import { TodoSidebar } from './todos/TodoSidebar'
 import { reorderIds } from './todos/todoReorder'
 import type { ExtractionStatus, TodoItem } from './todos/todoTypes'
+import { canSelectWritingMode } from './writingModes'
+import type { WritingMode, WritingModeSelection } from './writingModes'
 
 const FONTS = [
   { label: 'Inter', cssFamily: 'Inter, system-ui, sans-serif' },
   { label: 'Space Grotesk', cssFamily: 'Space Grotesk, system-ui, sans-serif' },
   { label: 'Geist', cssFamily: 'Geist, system-ui, sans-serif' },
+]
+
+const FONT_SIZES = [
+  { label: 'Size S', cssSize: 'clamp(1.1rem, 1.55vw, 1.75rem)' },
+  { label: 'Size M', cssSize: 'clamp(1.25rem, 1.8vw, 2rem)' },
+  { label: 'Size L', cssSize: 'clamp(1.45rem, 2.15vw, 2.35rem)' },
 ]
 
 function isCommandOrControl(event: KeyboardEvent): boolean {
@@ -45,10 +53,13 @@ function buildTodoMap(todos: ExtractedTodo[]): Record<string, TodoItem> {
 
 export default function App(): React.JSX.Element {
   const [fontIndex, setFontIndex] = useState(0)
+  const [fontSizeIndex, setFontSizeIndex] = useState(1)
   const [isScrapConfirmOpen, setIsScrapConfirmOpen] = useState(false)
   const [editor, setEditor] = useState<Editor | null>(null)
   const [hasContent, setHasContent] = useState(false)
   const [timerStartedAt, setTimerStartedAt] = useState<number | null>(null)
+  const [writingMode, setWritingMode] = useState<WritingModeSelection>(null)
+  const writingModeRef = useRef<WritingModeSelection>(null)
   const [isFinalized, setIsFinalized] = useState(false)
   const [finalizedDraftText, setFinalizedDraftText] = useState<string | null>(
     null,
@@ -63,9 +74,54 @@ export default function App(): React.JSX.Element {
   const activeExtractionIdRef = useRef<string | null>(null)
 
   const selectedFont = FONTS[fontIndex]
+  const selectedFontSize = FONT_SIZES[fontSizeIndex]
+
+  useEffect(() => {
+    writingModeRef.current = writingMode
+  }, [writingMode])
+
+  const selectWritingMode = useCallback(
+    (nextMode: WritingMode) => {
+      if (!canSelectWritingMode(writingModeRef.current, nextMode)) {
+        return
+      }
+
+      writingModeRef.current = nextMode
+      setWritingMode(nextMode)
+
+      window.requestAnimationFrame(() => {
+        editor?.commands.focus('end')
+      })
+    },
+    [editor],
+  )
+
+  const autoSelectFreewrite = useCallback(() => {
+    if (writingModeRef.current !== null) {
+      return
+    }
+
+    writingModeRef.current = 'freewrite'
+    setWritingMode('freewrite')
+  }, [])
+
+  const getWritingMode = useCallback(() => writingModeRef.current, [])
+
+  const selectFreewrite = useCallback(() => {
+    selectWritingMode('freewrite')
+  }, [selectWritingMode])
+
+  const selectEdit = useCallback(() => {
+    selectWritingMode('edit')
+  }, [selectWritingMode])
 
   const cycleFont = useCallback(() => {
     setFontIndex((current) => (current + 1) % FONTS.length)
+    editor?.commands.focus('end')
+  }, [editor])
+
+  const cycleFontSize = useCallback(() => {
+    setFontSizeIndex((current) => (current + 1) % FONT_SIZES.length)
     editor?.commands.focus('end')
   }, [editor])
 
@@ -103,6 +159,8 @@ export default function App(): React.JSX.Element {
     editor?.commands.clearContent()
     setHasContent(false)
     setTimerStartedAt(null)
+    writingModeRef.current = null
+    setWritingMode(null)
     setIsFinalized(false)
     setFinalizedDraftText(null)
     setExtractionStatus('idle')
@@ -335,13 +393,21 @@ export default function App(): React.JSX.Element {
 
   return (
     <main className="app-shell" data-finalized={isFinalized || undefined}>
-      {timerStartedAt !== null && !isFinalized ? (
-        <DraftTimer startedAt={timerStartedAt} />
+      {!isFinalized ? (
+        <ModeTimerPill
+          writingMode={writingMode}
+          timerStartedAt={timerStartedAt}
+          onSelectFreewrite={selectFreewrite}
+          onSelectEdit={selectEdit}
+        />
       ) : null}
 
-      <ForwardOnlyEditor
+      <WritingEditor
         fontFamily={selectedFont.cssFamily}
+        fontSize={selectedFontSize.cssSize}
         isFinalized={isFinalized}
+        getWritingMode={getWritingMode}
+        onAutoSelectFreewrite={autoSelectFreewrite}
         onContentStateChange={handleContentStateChange}
         onEditorReady={setEditor}
         onEditorStateChange={refreshEditorControls}
@@ -364,9 +430,11 @@ export default function App(): React.JSX.Element {
         <Toolbar
           editor={editor}
           fontLabel={selectedFont.label}
+          fontSizeLabel={selectedFontSize.label}
           canFinalize={canFinalize}
           isFinalized={isFinalized}
           onCycleFont={cycleFont}
+          onCycleFontSize={cycleFontSize}
           onFinalize={finalizeDraft}
           onScrap={requestScrap}
           style={editorStyle}

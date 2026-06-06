@@ -62,27 +62,124 @@ button {
   color: var(--color-text);
 }
 
-.draft-timer {
+.mode-timer-pill {
   position: fixed;
   z-index: 15;
   top: 18px;
   left: 50%;
+  max-width: calc(100vw - 32px);
+  padding: 5px;
+  overflow: hidden;
   transform: translateX(-50%);
-  padding: 6px 11px;
   border: 1px solid var(--color-pill-border);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.52);
+  background: rgba(255, 255, 255, 0.56);
   color: var(--color-muted);
   font-size: 0.78rem;
   font-weight: 650;
   line-height: 1;
-  letter-spacing: 0.04em;
-  font-variant-numeric: tabular-nums;
   box-shadow: 0 8px 28px rgba(31, 31, 29, 0.08);
   backdrop-filter: blur(14px) saturate(1.12);
   -webkit-backdrop-filter: blur(14px) saturate(1.12);
-  pointer-events: none;
+  transition:
+    width 190ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
   user-select: none;
+}
+
+.mode-timer-pill__content {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+}
+
+.mode-timer-pill__timer-clip {
+  display: inline-block;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(-3px);
+  transition:
+    width 190ms ease,
+    opacity 120ms ease,
+    transform 160ms ease;
+  vertical-align: middle;
+}
+
+.mode-timer-pill__timer-clip[data-visible='true'] {
+  opacity: 1;
+  transform: translateX(0);
+  transition:
+    width 190ms ease,
+    opacity 120ms ease 70ms,
+    transform 160ms ease 55ms;
+}
+
+.mode-timer-pill__timer-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: max-content;
+  padding-left: 4px;
+}
+
+.mode-timer-pill__button,
+.mode-timer-pill__chip,
+.mode-timer-pill__time {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.mode-timer-pill__button {
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  font-weight: 700;
+  transition:
+    background-color 140ms ease,
+    transform 140ms ease;
+}
+
+.mode-timer-pill__button + .mode-timer-pill__button {
+  margin-left: 4px;
+}
+
+.mode-timer-pill__button:hover {
+  background: var(--color-hover);
+}
+
+.mode-timer-pill__button:active {
+  transform: translateY(1px);
+}
+
+.mode-timer-pill__button:focus-visible {
+  outline: 2px solid rgba(31, 31, 29, 0.35);
+  outline-offset: 2px;
+}
+
+.mode-timer-pill__chip {
+  background: var(--color-active);
+  color: var(--color-text);
+  letter-spacing: 0.01em;
+}
+
+.mode-timer-pill__time {
+  color: var(--color-muted);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.mode-timer-pill__divider {
+  width: 1px;
+  height: 18px;
+  flex: 0 0 auto;
+  background: var(--color-pill-border);
 }
 
 .editor-shell {
@@ -115,7 +212,7 @@ button {
 .editor-content {
   max-width: 1240px;
   margin: 0 auto;
-  font-size: clamp(1.4rem, 2vw, 2.25rem);
+  font-size: var(--editor-font-size, clamp(1.25rem, 1.8vw, 2rem));
   line-height: 1.45;
 }
 
@@ -202,9 +299,9 @@ button {
 .toolbar-pill {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   max-width: 100%;
-  padding: 8px;
+  padding: 6px;
   overflow-x: auto;
   border: 1px solid var(--color-pill-border);
   border-radius: 999px;
@@ -218,13 +315,14 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 36px;
-  height: 36px;
-  padding: 0 11px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 9px;
   border: 0;
   border-radius: 999px;
   background: transparent;
   color: var(--color-text);
+  font-size: 0.86rem;
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
@@ -268,9 +366,9 @@ button {
 
 .toolbar-divider {
   width: 1px;
-  height: 22px;
+  height: 18px;
   flex: 0 0 auto;
-  margin: 0 2px;
+  margin: 0 1px;
   background: var(--color-pill-border);
 }
 

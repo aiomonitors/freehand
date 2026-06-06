@@ -4,9 +4,11 @@ import type { Editor } from '@tiptap/core'
 type ToolbarProps = {
   editor: Editor | null
   fontLabel: string
+  fontSizeLabel: string
   canFinalize: boolean
   isFinalized: boolean
   onCycleFont: () => void
+  onCycleFontSize: () => void
   onFinalize: () => void
   onScrap: () => void
   style?: CSSProperties
@@ -51,9 +53,11 @@ function ToolbarButton({
 export function Toolbar({
   editor,
   fontLabel,
+  fontSizeLabel,
   canFinalize,
   isFinalized,
   onCycleFont,
+  onCycleFontSize,
   onFinalize,
   onScrap,
   style,
@@ -87,6 +91,12 @@ export function Toolbar({
           ariaLabel="Cycle document font"
           onClick={onCycleFont}
           title="Cycle font (Cmd/Ctrl+Shift+F)"
+        />
+        <ToolbarButton
+          label={fontSizeLabel}
+          ariaLabel="Cycle document text size"
+          onClick={onCycleFontSize}
+          title="Cycle document text size"
         />
         <span className="toolbar-divider" aria-hidden="true" />
         <ToolbarButton

@@ -1,32 +1,44 @@
 import { useEffect } from 'react'
+import type { CSSProperties } from 'react'
 import Placeholder from '@tiptap/extension-placeholder'
 import Underline from '@tiptap/extension-underline'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import type { Editor } from '@tiptap/core'
 
+import type { WritingModeSelection } from '../writingModes'
 import { hasNonWhitespaceText } from './editorUtils'
-import { NoDeletionExtension } from './extensions/NoDeletionExtension'
+import { WritingModeGuardExtension } from './extensions/WritingModeGuardExtension'
 
-type ForwardOnlyEditorProps = {
+type WritingEditorProps = {
   fontFamily: string
+  fontSize: string
   isFinalized: boolean
+  getWritingMode: () => WritingModeSelection
+  onAutoSelectFreewrite: () => void
   onContentStateChange: (hasContent: boolean) => void
   onEditorReady: (editor: Editor | null) => void
   onEditorStateChange: () => void
 }
 
-export function ForwardOnlyEditor({
+export function WritingEditor({
   fontFamily,
+  fontSize,
   isFinalized,
+  getWritingMode,
+  onAutoSelectFreewrite,
   onContentStateChange,
   onEditorReady,
   onEditorStateChange,
-}: ForwardOnlyEditorProps): React.JSX.Element {
+}: WritingEditorProps): React.JSX.Element {
+  const editorStyle = {
+    fontFamily,
+    '--editor-font-size': fontSize,
+  } as CSSProperties
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        undoRedo: false,
         heading: {
           levels: [1, 2],
         },
@@ -35,7 +47,10 @@ export function ForwardOnlyEditor({
       Placeholder.configure({
         placeholder: 'Start writing…',
       }),
-      NoDeletionExtension,
+      WritingModeGuardExtension.configure({
+        getWritingMode,
+        autoSelectFreewrite: onAutoSelectFreewrite,
+      }),
     ],
     content: '',
     editable: !isFinalized,
@@ -44,7 +59,7 @@ export function ForwardOnlyEditor({
     enablePasteRules: false,
     editorProps: {
       attributes: {
-        'aria-label': 'Forward-only rich text editor',
+        'aria-label': 'Rich text draft editor',
         class: 'editor-content__surface',
       },
     },
@@ -88,7 +103,7 @@ export function ForwardOnlyEditor({
     <section
       className="editor-shell"
       data-finalized={isFinalized || undefined}
-      style={{ fontFamily }}
+      style={editorStyle}
     >
       <div className="editor-content">
         <EditorContent editor={editor} />
