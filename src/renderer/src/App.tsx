@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Editor } from '@tiptap/core'
 
+import type {
+  ExtractedGoal,
+  ExtractedReflectionQuestion,
+} from '../../shared/reflections'
 import type { ExtractedTodo } from '../../shared/todos'
 import { ModeTimerPill } from './ModeTimerPill'
 import { WritingEditor } from './editor/WritingEditor'
@@ -32,12 +36,12 @@ function createClientRequestId(): string {
   return globalThis.crypto?.randomUUID() ?? `${Date.now()}-${Math.random()}`
 }
 
-function getErrorMessage(error: unknown): string {
+function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message.trim()) {
     return error.message
   }
 
-  return 'Todo extraction failed.'
+  return fallback
 }
 
 function buildTodoMap(todos: ExtractedTodo[]): Record<string, TodoItem> {
@@ -70,8 +74,24 @@ export default function App(): React.JSX.Element {
   const [todosById, setTodosById] = useState<Record<string, TodoItem>>({})
   const [activeTodoIds, setActiveTodoIds] = useState<string[]>([])
   const [completedTodoIds, setCompletedTodoIds] = useState<string[]>([])
+  const [goalsExtractionStatus, setGoalsExtractionStatus] =
+    useState<ExtractionStatus>('idle')
+  const [goalsExtractionError, setGoalsExtractionError] = useState<
+    string | null
+  >(null)
+  const [goals, setGoals] = useState<ExtractedGoal[]>([])
+  const [questionsExtractionStatus, setQuestionsExtractionStatus] =
+    useState<ExtractionStatus>('idle')
+  const [questionsExtractionError, setQuestionsExtractionError] = useState<
+    string | null
+  >(null)
+  const [reflectionQuestions, setReflectionQuestions] = useState<
+    ExtractedReflectionQuestion[]
+  >([])
   const [, setEditorRenderTick] = useState(0)
   const activeExtractionIdRef = useRef<string | null>(null)
+  const activeGoalsExtractionIdRef = useRef<string | null>(null)
+  const activeQuestionsExtractionIdRef = useRef<string | null>(null)
 
   const selectedFont = FONTS[fontIndex]
   const selectedFontSize = FONT_SIZES[fontSizeIndex]
@@ -148,13 +168,74 @@ export default function App(): React.JSX.Element {
           return
         }
 
-        setExtractionError(getErrorMessage(error))
+        setExtractionError(getErrorMessage(error, 'Todo extraction failed.'))
         setExtractionStatus('error')
       })
   }, [])
 
+  const startGoalsExtraction = useCallback((draftText: string) => {
+    const extractionId = createClientRequestId()
+    activeGoalsExtractionIdRef.current = extractionId
+    setGoalsExtractionStatus('loading')
+    setGoalsExtractionError(null)
+
+    void window.freehand
+      .extractGoals({ draftText })
+      .then((response) => {
+        if (activeGoalsExtractionIdRef.current !== extractionId) {
+          return
+        }
+
+        setGoals(response.goals)
+        setGoalsExtractionStatus('ready')
+      })
+      .catch((error: unknown) => {
+        if (activeGoalsExtractionIdRef.current !== extractionId) {
+          return
+        }
+
+        setGoalsExtractionError(
+          getErrorMessage(error, 'Goals extraction failed.'),
+        )
+        setGoalsExtractionStatus('error')
+      })
+  }, [])
+
+  const startReflectionQuestionsExtraction = useCallback(
+    (draftText: string) => {
+      const extractionId = createClientRequestId()
+      activeQuestionsExtractionIdRef.current = extractionId
+      setQuestionsExtractionStatus('loading')
+      setQuestionsExtractionError(null)
+
+      void window.freehand
+        .extractReflectionQuestions({ draftText })
+        .then((response) => {
+          if (activeQuestionsExtractionIdRef.current !== extractionId) {
+            return
+          }
+
+          setReflectionQuestions(response.questions)
+          setQuestionsExtractionStatus('ready')
+        })
+        .catch((error: unknown) => {
+          if (activeQuestionsExtractionIdRef.current !== extractionId) {
+            return
+          }
+
+          setQuestionsExtractionError(
+            getErrorMessage(error, 'Reflective questions extraction failed.'),
+          )
+          setQuestionsExtractionStatus('error')
+        })
+    },
+    [],
+  )
+
   const scrapDraft = useCallback(() => {
     activeExtractionIdRef.current = null
+    activeGoalsExtractionIdRef.current = null
+    activeQuestionsExtractionIdRef.current = null
     editor?.setEditable(true)
     editor?.commands.clearContent()
     setHasContent(false)
@@ -168,6 +249,12 @@ export default function App(): React.JSX.Element {
     setTodosById({})
     setActiveTodoIds([])
     setCompletedTodoIds([])
+    setGoalsExtractionStatus('idle')
+    setGoalsExtractionError(null)
+    setGoals([])
+    setQuestionsExtractionStatus('idle')
+    setQuestionsExtractionError(null)
+    setReflectionQuestions([])
     setIsScrapConfirmOpen(false)
 
     window.requestAnimationFrame(() => {
@@ -217,8 +304,20 @@ export default function App(): React.JSX.Element {
     setTodosById({})
     setActiveTodoIds([])
     setCompletedTodoIds([])
+    setGoals([])
+    setReflectionQuestions([])
     startTodoExtraction(draftText)
-  }, [editor, hasContent, isFinalized, isScrapConfirmOpen, startTodoExtraction])
+    startGoalsExtraction(draftText)
+    startReflectionQuestionsExtraction(draftText)
+  }, [
+    editor,
+    hasContent,
+    isFinalized,
+    isScrapConfirmOpen,
+    startGoalsExtraction,
+    startReflectionQuestionsExtraction,
+    startTodoExtraction,
+  ])
 
   const retryTodoExtraction = useCallback(() => {
     if (!finalizedDraftText) {
@@ -227,6 +326,22 @@ export default function App(): React.JSX.Element {
 
     startTodoExtraction(finalizedDraftText)
   }, [finalizedDraftText, startTodoExtraction])
+
+  const retryGoalsExtraction = useCallback(() => {
+    if (!finalizedDraftText) {
+      return
+    }
+
+    startGoalsExtraction(finalizedDraftText)
+  }, [finalizedDraftText, startGoalsExtraction])
+
+  const retryReflectionQuestionsExtraction = useCallback(() => {
+    if (!finalizedDraftText) {
+      return
+    }
+
+    startReflectionQuestionsExtraction(finalizedDraftText)
+  }, [finalizedDraftText, startReflectionQuestionsExtraction])
 
   const rejectTodo = useCallback((id: string) => {
     setActiveTodoIds((currentIds) =>
@@ -419,7 +534,15 @@ export default function App(): React.JSX.Element {
           error={extractionError}
           activeTodos={activeTodos}
           completedTodos={completedTodos}
+          goalsStatus={goalsExtractionStatus}
+          goalsError={goalsExtractionError}
+          goals={goals}
+          questionsStatus={questionsExtractionStatus}
+          questionsError={questionsExtractionError}
+          questions={reflectionQuestions}
           onRetry={retryTodoExtraction}
+          onRetryGoals={retryGoalsExtraction}
+          onRetryQuestions={retryReflectionQuestionsExtraction}
           onReject={rejectTodo}
           onToggleDone={toggleTodoDone}
           onReorderActive={reorderActiveTodos}

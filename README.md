@@ -24,8 +24,9 @@ Freehand is a desktop writing app for forward-only drafting. It gives you a full
 - Font cycling between Inter, Space Grotesk, and Geist.
 - Bottom-center floating toolbar.
 - Scrap flow for clearing the current draft, with confirmation when content exists.
-- Finalize flow that locks a draft, hides drafting controls, and extracts TODOs into a right sidebar via Mastra + OpenRouter.
+- Finalize flow that locks a draft, hides drafting controls, and extracts TODOs, goals, and reflective questions into a right sidebar via Mastra + OpenRouter.
 - Simple checkbox TODO line items with reject, done/undone, and whole-row drag-reorder for active items.
+- Read-only extracted goals with rationale and reflective follow-up prompts.
 - In-memory only: no persistence, saving, import, or export in v1.
 
 ## Stack
@@ -35,7 +36,7 @@ Freehand is a desktop writing app for forward-only drafting. It gives you a full
 - TypeScript
 - electron-vite
 - Tiptap / ProseMirror
-- Mastra + OpenRouter for TODO extraction
+- Mastra + OpenRouter for finalized output extraction
 - @dnd-kit/react for TODO drag-and-drop
 - PNPM
 - ESLint flat config
@@ -64,9 +65,9 @@ or:
 pnpm rebuild electron
 ```
 
-## AI TODO extraction configuration
+## AI finalized output extraction configuration
 
-Finalized TODO extraction requires an OpenRouter API key:
+Finalized TODO, goals, and reflective questions extraction requires an OpenRouter API key:
 
 ```sh
 export OPENROUTER_API_KEY=your-openrouter-key
@@ -135,14 +136,14 @@ Blocked shortcuts/actions:
 
 ```text
 src/
-  main/          Electron main process and TODO extraction backend
+  main/          Electron main process and finalized extraction backend
   preload/       Secure preload boundary
   shared/        Serializable shared IPC/types
   renderer/      React renderer app
     src/editor/  Tiptap editor, toolbar, modal, extensions
-    src/todos/   Finalized TODO sidebar
+    src/todos/   Finalized output sidebar and TODO components
 ```
 
 ## Notes
 
-This app is intentionally ephemeral. Draft content and extracted TODOs live only in memory and are lost when the app quits or the draft is scrapped.
+This app is intentionally ephemeral. Draft content and extracted finalized outputs live only in memory and are lost when the app quits or the draft is scrapped.

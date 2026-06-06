@@ -1,6 +1,10 @@
 import { DragDropProvider } from '@dnd-kit/react'
 import type { DragEndEvent } from '@dnd-kit/react'
 
+import type {
+  ExtractedGoal,
+  ExtractedReflectionQuestion,
+} from '../../../shared/reflections'
 import { SortableTodoItem, TodoLineItem } from './SortableTodoItem'
 import type { ExtractionStatus, TodoItem } from './todoTypes'
 
@@ -9,10 +13,30 @@ type TodoSidebarProps = {
   error: string | null
   activeTodos: TodoItem[]
   completedTodos: TodoItem[]
+  goalsStatus: ExtractionStatus
+  goalsError: string | null
+  goals: ExtractedGoal[]
+  questionsStatus: ExtractionStatus
+  questionsError: string | null
+  questions: ExtractedReflectionQuestion[]
   onRetry: () => void
+  onRetryGoals: () => void
+  onRetryQuestions: () => void
   onReject: (id: string) => void
   onToggleDone: (id: string) => void
   onReorderActive: (sourceIndex: number, targetIndex: number) => void
+}
+
+type ExtractionSectionProps = {
+  title: string
+  status: ExtractionStatus
+  error: string | null
+  loadingMessage: string
+  emptyMessage: string
+  errorMessage: string
+  hasContent: boolean
+  onRetry: () => void
+  children: React.ReactNode
 }
 
 function readSortableIndex(value: unknown): number | null {
@@ -28,12 +52,64 @@ function readSortableIndex(value: unknown): number | null {
   return null
 }
 
+function ExtractionSection({
+  title,
+  status,
+  error,
+  loadingMessage,
+  emptyMessage,
+  errorMessage,
+  hasContent,
+  onRetry,
+  children,
+}: ExtractionSectionProps): React.JSX.Element {
+  return (
+    <section className="finalized-section" aria-label={title}>
+      <h3 className="finalized-section__title">{title}</h3>
+
+      {status === 'loading' ? (
+        <div className="todo-sidebar__state" role="status">
+          {loadingMessage}
+        </div>
+      ) : null}
+
+      {status === 'error' ? (
+        <div className="todo-sidebar__state todo-sidebar__state--error">
+          <p>{errorMessage}</p>
+          {error ? <p className="todo-sidebar__error">{error}</p> : null}
+          <button
+            type="button"
+            className="todo-sidebar__retry"
+            onClick={onRetry}
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
+
+      {status === 'ready' && !hasContent ? (
+        <div className="todo-sidebar__state">{emptyMessage}</div>
+      ) : null}
+
+      {status === 'ready' && hasContent ? children : null}
+    </section>
+  )
+}
+
 export function TodoSidebar({
   status,
   error,
   activeTodos,
   completedTodos,
+  goalsStatus,
+  goalsError,
+  goals,
+  questionsStatus,
+  questionsError,
+  questions,
   onRetry,
+  onRetryGoals,
+  onRetryQuestions,
   onReject,
   onToggleDone,
   onReorderActive,
@@ -56,37 +132,22 @@ export function TodoSidebar({
   }
 
   return (
-    <aside className="todo-sidebar" aria-label="Extracted TODOs">
+    <aside className="todo-sidebar" aria-label="Finalized outputs">
       <header className="todo-sidebar__header">
         <p className="todo-sidebar__eyebrow">Finalized</p>
-        <h2>TODOs</h2>
+        <h2>Outputs</h2>
       </header>
 
-      {status === 'loading' ? (
-        <div className="todo-sidebar__state" role="status">
-          Extracting TODOs…
-        </div>
-      ) : null}
-
-      {status === 'error' ? (
-        <div className="todo-sidebar__state todo-sidebar__state--error">
-          <p>Could not extract TODOs.</p>
-          {error ? <p className="todo-sidebar__error">{error}</p> : null}
-          <button
-            type="button"
-            className="todo-sidebar__retry"
-            onClick={onRetry}
-          >
-            Retry
-          </button>
-        </div>
-      ) : null}
-
-      {status === 'ready' && !hasTodos ? (
-        <div className="todo-sidebar__state">No clear TODOs found.</div>
-      ) : null}
-
-      {status === 'ready' && hasTodos ? (
+      <ExtractionSection
+        title="TODOs"
+        status={status}
+        error={error}
+        loadingMessage="Extracting TODOs…"
+        emptyMessage="No clear TODOs found."
+        errorMessage="Could not extract TODOs."
+        hasContent={hasTodos}
+        onRetry={onRetry}
+      >
         <div className="todo-list-wrap">
           {activeTodos.length > 0 ? (
             <DragDropProvider onDragEnd={handleDragEnd}>
@@ -120,7 +181,46 @@ export function TodoSidebar({
             </section>
           ) : null}
         </div>
-      ) : null}
+      </ExtractionSection>
+
+      <ExtractionSection
+        title="Goals"
+        status={goalsStatus}
+        error={goalsError}
+        loadingMessage="Extracting goals…"
+        emptyMessage="No clear goals found."
+        errorMessage="Could not extract goals."
+        hasContent={goals.length > 0}
+        onRetry={onRetryGoals}
+      >
+        <div className="reflection-list">
+          {goals.map((goal) => (
+            <article className="goal-card" key={goal.id}>
+              <p className="goal-card__text">{goal.text}</p>
+              <p className="goal-card__rationale">{goal.rationale}</p>
+            </article>
+          ))}
+        </div>
+      </ExtractionSection>
+
+      <ExtractionSection
+        title="Reflective Questions"
+        status={questionsStatus}
+        error={questionsError}
+        loadingMessage="Extracting reflective questions…"
+        emptyMessage="No reflective questions found."
+        errorMessage="Could not extract reflective questions."
+        hasContent={questions.length > 0}
+        onRetry={onRetryQuestions}
+      >
+        <div className="reflection-list">
+          {questions.map((question) => (
+            <p className="question-card" key={question.id}>
+              {question.text}
+            </p>
+          ))}
+        </div>
+      </ExtractionSection>
     </aside>
   )
 }

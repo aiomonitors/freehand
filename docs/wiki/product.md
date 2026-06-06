@@ -70,11 +70,11 @@ See `elapsed-draft-timer.md` and `writing-modes.md`.
 
 The top-center pill shows mode choices before drafting, active mode while drafting, and elapsed draft time once meaningful writing starts. It hides when the draft is finalized and resets when the draft is scrapped.
 
-### Finalized TODO sidebar
+### Finalized output sidebar
 
 See `finalized-todo-sidebar.md`.
 
-A non-empty draft can be finalized with the toolbar or Cmd/Ctrl+Shift+Enter. Finalizing locks the editor, hides the toolbar and top pill, opens a right sidebar, and extracts simple checkbox TODO line items through a main-process Mastra/OpenRouter agent. TODO state remains in memory only.
+A non-empty draft can be finalized with the toolbar or Cmd/Ctrl+Shift+Enter. Finalizing locks the editor, hides the toolbar and top pill, opens a right sidebar, and extracts TODOs, goals with rationale, and reflective follow-up questions through main-process Mastra/OpenRouter agents. Extracted output state remains in memory only.
 
 ### Electron shell
 
@@ -108,7 +108,7 @@ Freehand keeps document and presentation state in the renderer:
 - non-whitespace content detection
 - elapsed timer start timestamp
 - finalized draft state
-- extracted TODO sidebar state
+- extracted finalized output sidebar state
 
 No app-level persistence is expected. Quitting the app loses the draft and selected writing mode.
 

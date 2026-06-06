@@ -39,7 +39,7 @@ When Scrap is confirmed:
 - selected writing mode resets to no selected mode
 - the top pill returns to `Freewrite` / `Edit` choices
 - elapsed draft timer resets
-- finalized/TODO sidebar state resets
+- finalized output sidebar state resets, including TODOs, goals, and reflective questions
 - editor is refocused
 - selected font remains unchanged
 

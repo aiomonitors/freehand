@@ -3,8 +3,11 @@ import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 
 import type { ExtractTodosResponse } from '../shared/todos'
-
-export const DEFAULT_OPENROUTER_MODEL = 'openrouter/google/gemini-2.5-flash'
+import {
+  assertOpenRouterApiKey,
+  getOpenRouterModel,
+  isStructuredOutputCompatibilityError,
+} from './openRouterExtraction'
 
 const MAX_TODOS = 8
 
@@ -17,16 +20,6 @@ const extractionSchema = z.object({
 })
 
 type TodoExtraction = z.infer<typeof extractionSchema>
-
-function getOpenRouterModel(): string {
-  return process.env.OPENROUTER_MODEL?.trim() || DEFAULT_OPENROUTER_MODEL
-}
-
-function assertOpenRouterApiKey(): void {
-  if (!process.env.OPENROUTER_API_KEY?.trim()) {
-    throw new Error('OPENROUTER_API_KEY is not configured.')
-  }
-}
 
 function createTodoExtractionAgent(): Agent {
   return new Agent({
@@ -54,16 +47,6 @@ function buildExtractionPrompt(draftText: string): string {
     draftText,
     '</draft>',
   ].join('\n')
-}
-
-function isStructuredOutputCompatibilityError(error: unknown): boolean {
-  const message = String(error instanceof Error ? error.message : error)
-
-  return (
-    message.includes('response_format') ||
-    message.includes('structured output') ||
-    message.includes('schema')
-  )
 }
 
 function normalizeExtractionResult(

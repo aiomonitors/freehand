@@ -1,4 +1,10 @@
 import type {
+  ExtractGoalsRequest,
+  ExtractGoalsResponse,
+  ExtractReflectionQuestionsRequest,
+  ExtractReflectionQuestionsResponse,
+} from '../../shared/reflections'
+import type {
   ExtractTodosRequest,
   ExtractTodosResponse,
 } from '../../shared/todos'
@@ -9,6 +15,12 @@ declare global {
       extractTodos: (
         request: ExtractTodosRequest,
       ) => Promise<ExtractTodosResponse>
+      extractGoals: (
+        request: ExtractGoalsRequest,
+      ) => Promise<ExtractGoalsResponse>
+      extractReflectionQuestions: (
+        request: ExtractReflectionQuestionsRequest,
+      ) => Promise<ExtractReflectionQuestionsResponse>
     }
   }
 }

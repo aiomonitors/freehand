@@ -22,6 +22,8 @@ The renderer owns:
 - finalized text snapshot
 - extracted TODO items
 - active/completed TODO ordering
+- extracted goals
+- extracted reflective questions
 
 ## What is not persisted
 
@@ -35,6 +37,8 @@ The app does not persist:
 - finalized draft state
 - extracted TODO items
 - rejected/completed TODO state
+- extracted goals
+- extracted reflective questions
 - formatting history
 - undo/redo history
 - window-specific document data
@@ -45,7 +49,7 @@ Quitting the app loses the current draft and selected writing mode.
 
 The no-persistence model keeps the app focused on drafting and avoids turning Freehand into a document manager.
 
-It also keeps the Scrap action conceptually clear: Scrap clears the only current draft state, including mode selection and any finalized TODO sidebar state.
+It also keeps the Scrap action conceptually clear: Scrap clears the only current draft state, including mode selection and any finalized output sidebar state.
 
 ## Constraints for future work
 
