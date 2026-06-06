@@ -3,6 +3,8 @@ import { join } from 'node:path'
 
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 
+import { registerTodoIpc } from './registerTodoIpc'
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1200,
@@ -39,6 +41,7 @@ function createWindow(): void {
 
 void app.whenReady().then(() => {
   electronApp.setAppUserModelId('works.earendil.no-backspace-editor')
+  registerTodoIpc()
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
