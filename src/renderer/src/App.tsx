@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Editor } from '@tiptap/core'
 
+import { DraftTimer } from './DraftTimer'
 import { ForwardOnlyEditor } from './editor/ForwardOnlyEditor'
 import { ScrapConfirmModal } from './editor/ScrapConfirmModal'
 import { Toolbar } from './editor/Toolbar'
@@ -20,6 +21,7 @@ export default function App(): React.JSX.Element {
   const [isScrapConfirmOpen, setIsScrapConfirmOpen] = useState(false)
   const [editor, setEditor] = useState<Editor | null>(null)
   const [hasContent, setHasContent] = useState(false)
+  const [timerStartedAt, setTimerStartedAt] = useState<number | null>(null)
   const [, setEditorRenderTick] = useState(0)
 
   const selectedFont = FONTS[fontIndex]
@@ -32,6 +34,7 @@ export default function App(): React.JSX.Element {
   const scrapDraft = useCallback(() => {
     editor?.commands.clearContent()
     setHasContent(false)
+    setTimerStartedAt(null)
     setIsScrapConfirmOpen(false)
 
     window.requestAnimationFrame(() => {
@@ -55,6 +58,14 @@ export default function App(): React.JSX.Element {
 
   const refreshEditorControls = useCallback(() => {
     setEditorRenderTick((tick) => tick + 1)
+  }, [])
+
+  const handleContentStateChange = useCallback((nextHasContent: boolean) => {
+    setHasContent(nextHasContent)
+
+    if (nextHasContent) {
+      setTimerStartedAt((current) => current ?? Date.now())
+    }
   }, [])
 
   useEffect(() => {
@@ -98,9 +109,13 @@ export default function App(): React.JSX.Element {
 
   return (
     <main className="app-shell">
+      {timerStartedAt !== null ? (
+        <DraftTimer startedAt={timerStartedAt} />
+      ) : null}
+
       <ForwardOnlyEditor
         fontFamily={selectedFont.cssFamily}
-        onContentStateChange={setHasContent}
+        onContentStateChange={handleContentStateChange}
         onEditorReady={setEditor}
         onEditorStateChange={refreshEditorControls}
       />
